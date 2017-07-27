@@ -1,0 +1,10 @@
+################################
+# Dune module information file #
+################################
+
+#Name of the module
+Module: dune-uq
+Version: 0.0
+Maintainer: t.dodwell@exeter.ac.uk
+#depending on
+Depends: dune-common dune-geometry dune-localfunctions dune-uggrid dune-grid dune-typetree dune-istl dune-functions dune-pdelab
