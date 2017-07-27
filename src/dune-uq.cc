@@ -123,6 +123,8 @@ int main(int argc, char** argv)
 
   // Construct Model
 
+  // end to add class which holds samples, allow post processing of samples
+
   MODEL<2,Dune::YaspGrid<2>> myModel(grid);
 
   RandomField z;

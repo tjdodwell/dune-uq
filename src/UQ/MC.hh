@@ -77,9 +77,10 @@ void inline MC(MODEL& model, RandomField& z, int level = 0){
 
 	double EQ = computeMean(Q);
 
-	std::cout << "== Results == " << EQ << std::endl;
+	std::cout << "== Results == "<< std::endl;
 	std::cout << "E[Q] = " << EQ << std::endl;
 	std::cout << "V[Q] = " << V << std::endl;
+	std::cout << "Number of Samples = " << N << std::endl;
 	std::cout << "Sampling Error = " << samplingError << std::endl;
 	std::cout << "Average Time per Samples = " << time << std::endl;
 
