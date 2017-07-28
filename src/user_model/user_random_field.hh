@@ -63,6 +63,10 @@ public:
         }       
     } // end user_random_field
 
+    double inline getValue(int i){
+    	return xi[i];
+    }
+
 
 private:
 	

@@ -86,6 +86,7 @@ Dune::ParameterTree config;
 
 #include "user_model/user_random_field.hh"
 #include "user_model/user_model_diffusion.hh"
+#include "user_model/user_sample_container.hh"
 
 #include "UQ/MC.hh"
 
@@ -129,7 +130,11 @@ int main(int argc, char** argv)
 
   RandomField z;
 
-  MC< MODEL<2,Dune::YaspGrid<2> >, RandomField >(myModel,z);
+  SampleContainer<RandomField> samples;
+
+  MC< MODEL<2,Dune::YaspGrid<2> >, RandomField , SampleContainer <RandomField> >(myModel,z,samples);
+
+  samples.post();
 
 
   MPI_Finalize();

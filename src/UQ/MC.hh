@@ -1,8 +1,8 @@
 #include "../stats/common.hh"
 
 /* MC.hh - Simple Monte Carlos Algorithms */
-template <class MODEL, class RandomField>
-void inline MC(MODEL& model, RandomField& z, int level = 0){
+template <class MODEL, class RandomField, class Samples>
+void inline MC(MODEL& model, RandomField& z,Samples& samples, int level = 0){
 
 	int rank, nproc;
 
@@ -33,25 +33,23 @@ void inline MC(MODEL& model, RandomField& z, int level = 0){
 	Dune::Timer watch;
 
 
-	// Do sum initial samples
-
+	// Do some initial samples
 	for (int i = 0; i < N; i++){
+
+		watch.reset();
 
 		z.generate_random_field();
 
 		Q[i] = model.getSample(level,z);
+
+		samples.add_Sample(Q[i],z, watch.elapsed());
 	}
 
-
-
-	double time = watch.elapsed() / N;
+	// Do some stats on these intial samples
 
 	double V = computeVar(Q);
-
-	double samplingError = std::sqrt(V/N);
-
+	double samplingError = std::sqrt(V/N); // Compute sampling error
 	bool flag = false;
-
 	if (samplingError > epsilon){flag = true;}
 
 	int Nold;
@@ -64,8 +62,10 @@ void inline MC(MODEL& model, RandomField& z, int level = 0){
 		Q.resize(N);
 
 		for (int i = Nold; i < N; i++){
+			watch.reset();
 			z.generate_random_field();
 			Q[i] = model.getSample(level,z);
+			samples.add_Sample(Q[i],z, watch.elapsed());
 		}
 
 		V = computeVar(Q);
@@ -74,16 +74,6 @@ void inline MC(MODEL& model, RandomField& z, int level = 0){
 		if (samplingError < epsilon){flag = false;}
 
 	}
-
-	double EQ = computeMean(Q);
-
-	std::cout << "== Results == "<< std::endl;
-	std::cout << "E[Q] = " << EQ << std::endl;
-	std::cout << "V[Q] = " << V << std::endl;
-	std::cout << "Number of Samples = " << N << std::endl;
-	std::cout << "Sampling Error = " << samplingError << std::endl;
-	std::cout << "Average Time per Samples = " << time << std::endl;
-
 
 }
 
