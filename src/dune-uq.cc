@@ -84,9 +84,9 @@ Dune::ParameterTree config;
 
 #include <dune/pdelab/adaptivity/adaptivity.hh>
 
-#include "user_model/user_random_field.hh"
-#include "user_model/user_model_diffusion.hh"
-#include "user_model/user_sample_container.hh"
+#include "user_model/MC/user_random_field.hh"
+#include "user_model/MC/user_model_diffusion.hh"
+#include "user_model/MC/user_sample_container.hh"
 
 #include "UQ/MC.hh"
 
