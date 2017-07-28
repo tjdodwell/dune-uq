@@ -2,8 +2,8 @@
 #define user_model_h
 
 
-#include "../diffusion.hh"
-#include "../AverageInSubDomain.hh"
+#include "diffusion.hh"
+#include "AverageInSubDomain.hh"
 
 // ------------------------------------------------------------------------
 //             Dirichlet Boundary Conditions Class
@@ -32,9 +32,14 @@ class MODEL{
 
 	public:
 
-		MODEL(GRID& grid) : grid_(grid){}
+		MODEL(GRID& grid) : grid_(grid){
 
-		double inline getSample(int l, RandomField& z){
+            sigF = config.get<double>("data.sigF",1e-2);
+
+
+        }
+
+		double inline getSample(int l, RandomField& z, bool proposal = true){
 
 			using Dune::PDELab::Backend::native;
 
@@ -75,7 +80,7 @@ class MODEL{
             int intOrder = config.get<int>("solver.intOrder",2);
 
 	        typedef Dune::PDELab::diffuse<RandomField,LGV> LOP;
-	        LOP lop(gv,z,config.get<double>("PDE.f",1.0),intOrder);
+	        LOP lop(gv,z,config.get<double>("PDE.f",1.0),intOrder,proposal);
 
 	        typedef Dune::PDELab::GridOperator<GFS,GFS,LOP,MBE,double,double,double,CC,CC> GO;
 	        GO go(gfs,cc,gfs,cc,lop,mbe);
@@ -97,12 +102,12 @@ class MODEL{
 	          vtkwriter.write("solution",Dune::VTK::appendedraw);
 	        }
 	    
-	        // Find QoI
+	        // Compute Quantity of Interest
 
             Dune::FieldVector<double,2> y(0.0); 
 
-            y[0] = config.get<double>("QoI.center_x",0.5);
-            y[1] = config.get<double>("QoI.center_y",0.5);
+            y[0] = config.get<double>("QoI.center_x",0.75);
+            y[1] = config.get<double>("QoI.center_y",0.75);
 
             double radius = config.get<double>("QoI.radius",0.15);;
 
@@ -123,6 +128,22 @@ class MODEL{
 
             Q /=  M_PI * radius * radius;
 
+            // Compute Likelihood
+
+            // Compute Data first
+
+            Dune::FieldVector<double,3> Q_data(0.0);
+
+            std::vector<int> nodal_data = config.get<std::vector<int> >("data.nodes",{33,58,82});
+
+            double likelihood = 0.0;
+            for (int i = 0; i < numdata; i++){
+                likelihood += (native(p)[nodal_data[i]] - data[i]) * (native(p)[nodal_data[i]] - data[i]) 
+            }
+
+            likelihood = std::exp(-likelihood/sigF);
+
+            z.set_likelihood(likelihood,proposal);
 	       
             return Q;
 
@@ -132,6 +153,7 @@ class MODEL{
 	private:
 
         GRID& grid_;
+        double sigF;
 
 
 };

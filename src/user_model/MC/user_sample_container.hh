@@ -1,4 +1,4 @@
-#include "../stats/common.hh"
+#include "../../stats/common.hh"
 
 template<class RandomField>
 class SampleContainer{
@@ -6,6 +6,8 @@ class SampleContainer{
 public:
 
 	SampleContainer(){
+
+		N = 0;
 
 		stochastic_dim = config.get<int>("RandomField.dim",100);
 		
