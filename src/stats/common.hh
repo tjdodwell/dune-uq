@@ -42,7 +42,7 @@ double inline autocorrelation(std::vector<double>& X, double mu, double s, int k
 
 }
 
-double inline effectiveSampleSize(std::vector<double>& X){
+int inline effectiveSampleSize(std::vector<double>& X){
 
 	double tau = 1.0;
 
@@ -53,10 +53,12 @@ double inline effectiveSampleSize(std::vector<double>& X){
 	double s = computeVar(X);
 
 	for (int k = 1; k < n-1; k++){
-		tau += 2.0 * autocorrelation(X,mu,s,k);
+		tau += 2.0 * std::abs(autocorrelation(X,mu,s,k));
 	}
 
-	return tau;
+	int neff = std::floor(n / tau);
+
+	return neff;
 
 }
 

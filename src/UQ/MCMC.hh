@@ -28,6 +28,8 @@ void inline MCMC(MODEL& model, RandomField& z,Samples& samples, int level = 0){
 
 	int confidence = config.get<double>("MCMC.confidence", 0.9);
 
+	int burnin_factor = config.get<int>("MCMC.burnin_factor", 10);
+
 	
 
 	Dune::Timer watch;
@@ -44,7 +46,6 @@ void inline MCMC(MODEL& model, RandomField& z,Samples& samples, int level = 0){
 	Q_burnin[0] = model.getSample(level,z,false); // z contains likelihood for xi	
 
 	double accept = 0.0;
-
 
 	for (int i = 1; i < N; i++){
 
@@ -69,9 +70,43 @@ void inline MCMC(MODEL& model, RandomField& z,Samples& samples, int level = 0){
 
 	double accept_ratio = accept / N;
 
-	std::cout << "Acceptance Ratio = " <<  accept / N << std::endl; 
-	std::cout << effectiveSampleSize(Q_burnin) << std::endl;
+	int neff = effectiveSampleSize(Q_burnin);
 
+	// Ensure that N > burnin_factor * 
+
+	while (N < burnin_factor * neff){
+
+		Q_burnin.resize(burnin_factor * neff);
+
+		for (int i = N; i < burnin_factor * neff; i++){
+
+		z.generate_proposal(); // Make proposal 
+
+		double Q_tmp = model.getSample(level,z,true);
+
+		bool accept_flag = z.accept_proposal();
+
+		//z.print_likelihood();
+
+		if(accept_flag){
+			Q_burnin[i] = Q_tmp; 
+			accept += 1.0;
+		}
+		else{
+			Q_burnin[i] = Q_burnin[i-1];
+		}
+
+		}
+
+		N = burnin_factor * neff;
+
+		neff = effectiveSampleSize(Q_burnin);
+
+
+
+	}
+
+	std::cout << neff << std::endl;
 
 }
 
