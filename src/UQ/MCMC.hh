@@ -13,7 +13,7 @@ void inline MCMC(MODEL& model, RandomField& z,Samples& samples, int level = 0){
 
     if (rank == 0){
             std::cout << "----------------------------------" << std::endl;
-            std::cout << "-    dune-uq : Standard MC     -" << std::endl;
+            std::cout << "-    dune-uq : MCMC		       -" << std::endl;
             std::cout << "----------------------------------" << std::endl;
      }
 
@@ -37,57 +37,41 @@ void inline MCMC(MODEL& model, RandomField& z,Samples& samples, int level = 0){
 
 	// Do some initial samples before computing autocorrelation time
 
-	std::vector<double> Q_burnin(1000);
+	std::vector<double> Q_burnin(N);
 
 	z.generate_random_field(); // Generate random field from prior
 
-	Q_burnin[] = model.getSample(level,z); // z contains likelihood for xi	
+	Q_burnin[0] = model.getSample(level,z,false); // z contains likelihood for xi	
 
-	for (int i = 0; i < N; i++){
+	double accept = 0.0;
 
-		z.make_proposal(false); // Make proposal 
 
-		double Q_tmp = model.getSample(level,z);
+	for (int i = 1; i < N; i++){
 
-		if(z.accept_proposal()){
+		z.generate_proposal(); // Make proposal 
+
+		double Q_tmp = model.getSample(level,z,true);
+
+		bool accept_flag = z.accept_proposal();
+
+		//z.print_likelihood();
+
+		if(accept_flag){
 			Q_burnin[i] = Q_tmp; 
+			accept += 1.0;
 		}
+		else{
+			Q_burnin[i] = Q_burnin[i-1];
+		}
+
 
 	}
 
+	double accept_ratio = accept / N;
 
+	std::cout << "Acceptance Ratio = " <<  accept / N << std::endl; 
+	std::cout << effectiveSampleSize(Q_burnin) << std::endl;
 
-
-
-	// Do some stats on these intial samples
-
-	double V = computeVar(Q);
-	double samplingError = std::sqrt(V/N); // Compute sampling error
-	bool flag = false;
-	if (samplingError > epsilon){flag = true;}
-
-	int Nold;
-
-	while(flag && N < maxSamples){
-
-		Nold = N;
-		N *= greedyFactor; N += 1;
-
-		Q.resize(N);
-
-		for (int i = Nold; i < N; i++){
-			watch.reset();
-			z.generate_random_field();
-			Q[i] = model.getSample(level,z);
-			samples.add_Sample(Q[i],z, watch.elapsed());
-		}
-
-		V = computeVar(Q);
-		samplingError = std::sqrt(V/N);
-
-		if (samplingError < epsilon){flag = false;}
-
-	}
 
 }
 

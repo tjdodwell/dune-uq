@@ -16,7 +16,7 @@ public:
     	numKLmodes_ = config.get<int>("RandomField.KLmodes",100);
 
         sigPCN_ = config.get<double>("Proposal.sigPCN",1.0);
-        beta = config.get<double>("Proposal.beta",0.3);
+        beta = config.get<double>("Proposal.beta",0.1);
 
         const int dim = 2;
 
@@ -74,6 +74,7 @@ public:
         for (int j = 0; j < numKLmodes_; j++){
             xi[j] = randn(gen);
         }       
+
     } // end user_random_field
 
     void inline generate_proposal(){
@@ -88,37 +89,27 @@ public:
 
     }
 
-    void inline set_likelihood(double likeli, bool proposal = true){
-        if (proposal){
-            likelihood_p = likeli;
-        }
-        else{ likelihood = likeli;}
+    void inline set_likelihood(double l, bool prop = false){
+        if (prop){ likelihood_p = l; }
+        else {likelihood = l; }
     }
 
-
+    void inline print_likelihood(){
+        std::cout << likelihood_p << " / " << likelihood << std::endl;
+    }
 
     bool inline accept_proposal(){
-
         std::random_device rd;
         std::mt19937 gen(rd());
-        std::uniform_distribution<double> rand(0.0,1.0);
-
+        std::uniform_real_distribution<> rand(0.0,1.0);
         double ratio = likelihood_p/likelihood;
-
         bool accept = false;
-
         if (rand(gen) < ratio){ // accept proposal
-
-            accept = true;
-
-            for (int j = 0; j < numKLmodes_; j++){
-                xi[j] = xi_p[j];
-            }
-
+            for (int j = 0; j < numKLmodes_; j++){ xi[j] = xi_p[j]; }
             likelihood = likelihood_p;
-
+            accept = true;
         }
-
+        return accept;
     }
 
     double inline getValue(int i){
@@ -130,6 +121,7 @@ private:
 	
 	int numKLmodes_;
     bool isTest = false;
+    double likelihood, likelihood_p;
     double sigKL_, ellKL_, sigPCN_, beta;
     std::vector<double> xi, xi_p;
     std::vector<double> freq, lam1D, lam, param_;

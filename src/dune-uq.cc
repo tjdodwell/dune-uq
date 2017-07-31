@@ -84,11 +84,16 @@ Dune::ParameterTree config;
 
 #include <dune/pdelab/adaptivity/adaptivity.hh>
 
-#include "user_model/MC/user_random_field.hh"
-#include "user_model/MC/user_model_diffusion.hh"
-#include "user_model/MC/user_sample_container.hh"
+//#include "user_model/MC/user_random_field.hh"
+//#include "user_model/MC/user_model_diffusion.hh"
+//#include "user_model/MC/user_sample_container.hh"
+
+#include "user_model/MCMC/user_random_field.hh"
+#include "user_model/MCMC/user_defined_model.hh"
+#include "user_model/MCMC/user_sample_container.hh"
 
 #include "UQ/MC.hh"
+#include "UQ/MCMC.hh"
 
 int main(int argc, char** argv)
 {
@@ -132,10 +137,11 @@ int main(int argc, char** argv)
 
   SampleContainer<RandomField> samples;
 
-  MC< MODEL<2,Dune::YaspGrid<2> >, RandomField , SampleContainer <RandomField> >(myModel,z,samples);
+  //MC< MODEL<2,Dune::YaspGrid<2> >, RandomField , SampleContainer <RandomField> >(myModel,z,samples);
+
+  MCMC< MODEL<2,Dune::YaspGrid<2> >, RandomField , SampleContainer <RandomField> >(myModel,z,samples);
 
   samples.post();
-
 
   MPI_Finalize();
 

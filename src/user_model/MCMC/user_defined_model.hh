@@ -2,8 +2,8 @@
 #define user_model_h
 
 
-#include "diffusion.hh"
-#include "AverageInSubDomain.hh"
+#include "../diffusion.hh"
+#include "../AverageInSubDomain.hh"
 
 // ------------------------------------------------------------------------
 //             Dirichlet Boundary Conditions Class
@@ -36,7 +36,14 @@ class MODEL{
 
             sigF = config.get<double>("data.sigF",1e-2);
 
+            numdata = config.get<int>("data.num",3);
 
+            nodal_data.resize(numdata);
+            data.resize(numdata);
+
+            nodal_data = config.get<std::vector<int>>("data.nodes",{33,58,82});
+
+            data = config.get<std::vector<double>>("data.values",{0.0981632,0.196559,0.102632});
         }
 
 		double inline getSample(int l, RandomField& z, bool proposal = true){
@@ -134,12 +141,14 @@ class MODEL{
 
             Dune::FieldVector<double,3> Q_data(0.0);
 
-            std::vector<int> nodal_data = config.get<std::vector<int> >("data.nodes",{33,58,82});
+
 
             double likelihood = 0.0;
             for (int i = 0; i < numdata; i++){
-                likelihood += (native(p)[nodal_data[i]] - data[i]) * (native(p)[nodal_data[i]] - data[i]) 
+                likelihood += (native(p)[nodal_data[i]] - data[i]) * (native(p)[nodal_data[i]] - data[i]);
             }
+
+
 
             likelihood = std::exp(-likelihood/sigF);
 
@@ -152,8 +161,12 @@ class MODEL{
 
 	private:
 
+        int numdata;
+
         GRID& grid_;
         double sigF;
+        std::vector<int> nodal_data;
+        std::vector<double> data;
 
 
 };

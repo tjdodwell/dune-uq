@@ -34,7 +34,7 @@ namespace Dune {
             enum { doAlphaVolume = true };
             enum { doLambdaVolume = true };
 
-            diffuse (GV& gv_, LE& le_,double f_,int intorder_=2)
+            diffuse (GV& gv_, LE& le_,double f_,int intorder_=2, bool proposal = false)
             : le(le_), intorder(intorder_), gv(gv_),f(f_)
             {}
 
