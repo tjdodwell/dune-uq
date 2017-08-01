@@ -30,14 +30,16 @@ void inline MCMC(MODEL& model, RandomField& z,Samples& samples, int level = 0){
 
 	int burnin_factor = config.get<int>("MCMC.burnin_factor", 10);
 
-	
+	int m = config.get<int>("MCMC.batch_size",30);
+
+
 
 	Dune::Timer watch;
 
 
 	// === Burnin Samples
 
-	// Do some initial samples before computing autocorrelation time
+	// Do some initial samples before computing autocorrelation time for the first time
 
 	std::vector<double> Q_burnin(N);
 
@@ -65,20 +67,17 @@ void inline MCMC(MODEL& model, RandomField& z,Samples& samples, int level = 0){
 			Q_burnin[i] = Q_burnin[i-1];
 		}
 
-
 	}
 
 	double accept_ratio = accept / N;
 
-	int neff = effectiveSampleSize(Q_burnin);
+	double tau = compute_autocorrelation_time(Q_burnin,m);
 
-	// Ensure that N > burnin_factor * 
+	while (N < std::ceil(burnin_factor * tau)){
 
-	while (N < burnin_factor * neff){
+		Q_burnin.resize(std::ceil(burnin_factor * tau));
 
-		Q_burnin.resize(burnin_factor * neff);
-
-		for (int i = N; i < burnin_factor * neff; i++){
+		for (int i = N; i < std::ceil(burnin_factor * tau); i++){
 
 		z.generate_proposal(); // Make proposal 
 
@@ -98,15 +97,104 @@ void inline MCMC(MODEL& model, RandomField& z,Samples& samples, int level = 0){
 
 		}
 
-		N = burnin_factor * neff;
+		N = std::ceil(burnin_factor * tau);
 
-		neff = effectiveSampleSize(Q_burnin);
-
-
+		tau = compute_autocorrelation_time(Q_burnin,m);
 
 	}
 
-	std::cout << neff << std::endl;
+	// Burnin Complete
+
+	int subSamplingRate = 2 * std::ceil(tau);
+
+
+	std::vector<double> Q(N);
+
+	Q[0] = Q_burnin[N-1];
+
+	double Qsub = 0.0;
+
+	// Do some initial samples
+	for (int i = 1; i < N; i++){
+
+		watch.reset();
+
+		Qsub = Q[i-1];
+
+		for (int j = 1; j < subSamplingRate; j++){
+
+			z.generate_proposal(); // Make proposal 
+
+			double Q_tmp = model.getSample(level,z,true);
+
+			bool accept_flag = z.accept_proposal();
+
+			//z.print_likelihood();
+
+			if(accept_flag){
+				Qsub = Q_tmp; 
+			}
+		
+		}
+
+		Q[i] = Qsub;
+
+		samples.add_Sample(Q[i],z,watch.elapsed());
+	}
+
+	// Do some stats on these intial samples
+
+	double V = computeVar(Q);
+	double samplingError = std::sqrt(V/N); // Compute sampling error
+	bool flag = false;
+	if (samplingError > epsilon){flag = true;}
+
+	int Nold;
+
+	while(flag && N < maxSamples){
+
+		Nold = N;
+		N *= greedyFactor; N += 1;
+
+		Q.resize(N);
+
+		for (int i = Nold; i < N; i++){
+
+			watch.reset();
+
+			Qsub = Q[i-1];
+
+			for (int j = 1; j < subSamplingRate; j++){
+
+				z.generate_proposal(); // Make proposal 
+
+				double Q_tmp = model.getSample(level,z,true);
+
+				bool accept_flag = z.accept_proposal();
+
+				//z.print_likelihood();
+
+				if(accept_flag){
+					Qsub = Q_tmp; 
+				}
+			
+			}
+
+			Q[i] = Qsub;
+
+			samples.add_Sample(Q[i],z,watch.elapsed());
+		}
+
+		V = computeVar(Q);
+		samplingError = std::sqrt(V/N);
+
+		if (samplingError < epsilon){flag = false;}
+
+	}
+
+
+
+
 
 }
 

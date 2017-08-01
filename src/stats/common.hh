@@ -24,37 +24,49 @@ double inline computeVar(std::vector<double>& samples){
 	return var;
 }
 
-double inline autocorrelation(std::vector<double>& X, double mu, double s, int k){
+double inline compute_autocorrelation_time(std::vector<double>& X, int m = 30){
 
-	int n = X.size();
+double s = computeVar(X); // sample variance
 
-	double rho_k = 0.0;
+int n = X.size();
 
-	for (int i = 0; i < n - k; i++){
+std::vector<std::vector<double>> batch(m); // make a vector for each batch
 
-		rho_k += (X[i] - mu) * (X[i + k] - mu);
+std::vector<double> mu(m); // vector for the means of the batches
 
+int size_of_batch = std::floor(n/m);
+
+for (int j = 0; j < m; j++){ // for each batch
+
+	batch[j].resize(size_of_batch); // resize j^th batch to contain values
+
+	for (int i = 0; i < size_of_batch; i++){
+		batch[j][i] = X[j*m + i]; // store values for each batch
 	}
-
-	rho_k /= n * s;
-
-	return rho_k;
-
+	mu[j] = computeMean(batch[j]); // compute mean of jth batch
 }
 
-int inline effectiveSampleSize(std::vector<double>& X){
+double sm = computeVar(mu); // compute variances
 
-	double tau = 1.0;
+double tau = size_of_batch * sm / s; // estimate autocorrelation time
+
+std::cout << "size_of_batch = " << size_of_batch << std::endl;
+
+std::cout << "sm = " << sm << std::endl;
+
+std::cout << "s = " << s << std::endl;
+
+return tau;
+	
+}
+
+
+
+int inline effectiveSampleSize(std::vector<double>& X, int m = 30){
 
 	int n = X.size();
 
-	double mu = computeMean(X);
-
-	double s = computeVar(X);
-
-	for (int k = 1; k < n-1; k++){
-		tau += 2.0 * std::abs(autocorrelation(X,mu,s,k));
-	}
+	double tau = compute_autocorrelation_time(X,m);
 
 	int neff = std::floor(n / tau);
 
