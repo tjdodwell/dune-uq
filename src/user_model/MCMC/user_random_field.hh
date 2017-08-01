@@ -71,9 +71,19 @@ public:
         std::normal_distribution<double> randn(0.0,sigKL_);
         
         std::fill(xi.begin(), xi.end(), 0.0);
+
+        prior_density = 0.0;
+
         for (int j = 0; j < numKLmodes_; j++){
             xi[j] = randn(gen);
-        }       
+            prior_density -= xi[j] * xi[j];
+        }    
+
+        double factor = std::pow((2. * M_PI), 0.5 * numKLmodes_);
+
+        prior_density = std::exp(-0.5 * prior_density) / factor;
+
+
 
     } // end user_random_field
 
@@ -83,9 +93,17 @@ public:
         std::mt19937 gen(rd());
         std::normal_distribution<double> randn(0.0,sigPCN_);
 
+        prior_density_prop = 0.0;
+
         for (int j = 0; j < numKLmodes_; j++){
             xi_p[j] = std::sqrt(1 - beta * beta) * xi_p[j] + beta * randn(gen);
+            prior_density -= xi_p[j] * xi_p[j];
         }
+
+        double factor = std::pow((2. * M_PI), 0.5 * numKLmodes_);
+
+        prior_density_prop = std::exp(-0.5 * prior_density_prop) / factor;
+
 
     }
 
@@ -94,19 +112,16 @@ public:
         else {likelihood = l; }
     }
 
-    void inline print_likelihood(){
-        std::cout << likelihood_p << " / " << likelihood << std::endl;
-    }
-
     bool inline accept_proposal(){
         std::random_device rd;
         std::mt19937 gen(rd());
         std::uniform_real_distribution<> rand(0.0,1.0);
-        double ratio = likelihood_p/likelihood;
+        double ratio = (prior_density_prop * likelihood_p) / (prior_density * likelihood);
         bool accept = false;
         if (rand(gen) < ratio){ // accept proposal
             for (int j = 0; j < numKLmodes_; j++){ xi[j] = xi_p[j]; }
             likelihood = likelihood_p;
+            prior_density = prior_density_prop;
             accept = true;
         }
         return accept;
@@ -121,7 +136,7 @@ private:
 	
 	int numKLmodes_;
     bool isTest = false;
-    double likelihood, likelihood_p;
+    double likelihood, likelihood_p, prior_density, prior_density_prop;
     double sigKL_, ellKL_, sigPCN_, beta;
     std::vector<double> xi, xi_p;
     std::vector<double> freq, lam1D, lam, param_;
