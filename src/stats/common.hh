@@ -50,12 +50,6 @@ double sm = computeVar(mu); // compute variances
 
 double tau = size_of_batch * sm / s; // estimate autocorrelation time
 
-std::cout << "size_of_batch = " << size_of_batch << std::endl;
-
-std::cout << "sm = " << sm << std::endl;
-
-std::cout << "s = " << s << std::endl;
-
 return tau;
 	
 }

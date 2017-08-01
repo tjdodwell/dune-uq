@@ -18,7 +18,7 @@ void inline MCMC(MODEL& model, RandomField& z,Samples& samples, int level = 0){
      }
 
 
-	int N = config.get<int>("MCMC.initialSamples", 1000);
+	int N = config.get<int>("MCMC.burninSamples", 1000);
 
 	double greedyFactor = config.get<double>("MCMC.greedyFactor", 1.1);
 	
@@ -107,6 +107,7 @@ void inline MCMC(MODEL& model, RandomField& z,Samples& samples, int level = 0){
 
 	int subSamplingRate = 2 * std::ceil(tau);
 
+	N = config.get<int>("MCMC.initialSamples", 100);
 
 	std::vector<double> Q(N);
 
